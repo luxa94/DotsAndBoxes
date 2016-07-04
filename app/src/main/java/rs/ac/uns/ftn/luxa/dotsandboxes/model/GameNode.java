@@ -99,16 +99,16 @@ public class GameNode {
         for (IntIntTuple tuple : findFreeEdgeTuples()) {
             final GameNode nextNode = new GameNode(this);
             nextNode.getFields()[tuple.getFirst()][tuple.getSecond()].setStatus(status);
-            if (completedFields() != nextNode.completedFields()) {
-                final List<GameNode> moreNodes = nextNode.getNextNodes(status);
-                if (moreNodes.size() == 0) {
-                    nextNodes.add(nextNode);
-                }
-                nextNodes.addAll(nextNode.getNextNodes(status));
-            } else {
-                nextNodes.add(nextNode);
-            }
-//            nextNodes.add(nextNode);
+//            if (completedFields() != nextNode.completedFields()) {
+//                final List<GameNode> moreNodes = nextNode.getNextNodes(status);
+//                if (moreNodes.size() == 0) {
+//                    nextNodes.add(nextNode);
+//                }
+//                nextNodes.addAll(nextNode.getNextNodes(status));
+//            } else {
+//                nextNodes.add(nextNode);
+//            }
+            nextNodes.add(nextNode);
         }
 
         return nextNodes;
@@ -184,7 +184,7 @@ public class GameNode {
         for (int i = 1; i < nn; i += 2) {
             for (int j = 1; j < nn; j += 2) {
                 if (fields[i][j].getStatus() == Status.PLAYERS) {
-                    score -= 8655;
+                    score -= 10;
                 } else if (fields[i][j].getStatus() == Status.COMPUTERS) {
                     score++;
                 }

@@ -216,8 +216,12 @@ public class GameActivity extends AppCompatActivity {
         setActive(oldNode);
 
         if (!checkForEnd()) {
-            yourTurn();
-            currentPlayer = Player.PLAYER;
+            if (oldNode.completedFields() != newNode.completedFields()) {
+                computerTurn();
+            } else {
+                yourTurn();
+                currentPlayer = Player.PLAYER;
+            }
         }
     }
 
@@ -283,7 +287,7 @@ public class GameActivity extends AppCompatActivity {
         if (nodes.size() > 0) {
             n = nodes.get(0);
             for (GameNode gameNode : nodes) {
-                if (n.getScore() <= gameNode.getScore()) {
+                if (n.getScore() < gameNode.getScore()) {
                     n = gameNode;
                 }
             }
@@ -297,7 +301,7 @@ public class GameActivity extends AppCompatActivity {
         if (nodes.size() > 0) {
             n = nodes.get(0);
             for (GameNode gameNode : nodes) {
-                if (n.getScoreDifference() <= gameNode.getScoreDifference()) {
+                if (n.getScoreDifference() < gameNode.getScoreDifference()) {
                     n = gameNode;
                 }
             }
