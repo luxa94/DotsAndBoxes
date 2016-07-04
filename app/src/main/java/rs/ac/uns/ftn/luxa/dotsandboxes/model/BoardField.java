@@ -48,12 +48,8 @@ public abstract class BoardField {
         return status;
     }
 
-    public boolean setStatus(Status status) {
-        if (status == Status.FREE) {
-            this.status = status;
-            return true;
-        }
-        return false;
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
     @Override

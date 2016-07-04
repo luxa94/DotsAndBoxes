@@ -1,7 +1,6 @@
 package rs.ac.uns.ftn.luxa.dotsandboxes.model;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import rs.ac.uns.ftn.luxa.dotsandboxes.enums.Player;
@@ -15,7 +14,9 @@ public class GameNode {
 
     private static int n;
     private static int nn;
-    private static int maxScore;
+    public static int maxScore;
+
+    private int score;
 
     private Player player;
 
@@ -92,8 +93,23 @@ public class GameNode {
         }
     }
 
-    public List<GameNode> getNextNodes() {
+    public List<GameNode> getNextNodes(Status status) {
         final List<GameNode> nextNodes = new ArrayList<>();
+
+        for (IntIntTuple tuple : findFreeEdgeTuples()) {
+            final GameNode nextNode = new GameNode(this);
+            nextNode.getFields()[tuple.getFirst()][tuple.getSecond()].setStatus(status);
+            if (completedFields() != nextNode.completedFields()) {
+                final List<GameNode> moreNodes = nextNode.getNextNodes(status);
+                if (moreNodes.size() == 0) {
+                    nextNodes.add(nextNode);
+                }
+                nextNodes.addAll(nextNode.getNextNodes(status));
+            } else {
+                nextNodes.add(nextNode);
+            }
+//            nextNodes.add(nextNode);
+        }
 
         return nextNodes;
     }
@@ -111,11 +127,89 @@ public class GameNode {
         return free;
     }
 
-    public int score() {
+    public List<IntIntTuple> findDifferentEdges(GameNode other) {
+        final List<IntIntTuple> free = new ArrayList<>();
+        for (int i = 0; i < nn; ++i) {
+            final int ii = i % 2;
+            for (int j = 1 - ii; j < nn; j += 2) {
+                if (fields[i][j].getStatus() != other.getFields()[i][j].getStatus()) {
+                    free.add(new IntIntTuple(i, j));
+                }
+            }
+        }
+        return free;
+    }
+
+
+    public int completedFields() {
         int score = 0;
         for (int i = 1; i < nn; i += 2) {
             for (int j = 1; j < nn; j += 2) {
                 if (fields[i][j].isCompleted()) {
+                    score++;
+                }
+            }
+        }
+        return score;
+    }
+
+    public List<IntIntTuple> findDifferentFields(GameNode other) {
+        final List<IntIntTuple> free = new ArrayList<>();
+        for (int i = 1; i < nn; i += 2) {
+            for (int j = 1; j < nn; j += 2) {
+                if (fields[i][j].getStatus() != other.getFields()[i][j].getStatus()) {
+                    free.add(new IntIntTuple(i, j));
+                }
+            }
+        }
+        return free;
+    }
+
+    public int getScoreDifference() {
+        int score = 0;
+        for (int i = 1; i < nn; i += 2) {
+            for (int j = 1; j < nn; j += 2) {
+                if (fields[i][j].getStatus() == Status.PLAYERS) {
+                    score--;
+                } else if (fields[i][j].getStatus() == Status.COMPUTERS) {
+                    score++;
+                }
+            }
+        }
+        return score;
+    }
+
+    public int getScoreAdjusted() {
+        int score = 0;
+        for (int i = 1; i < nn; i += 2) {
+            for (int j = 1; j < nn; j += 2) {
+                if (fields[i][j].getStatus() == Status.PLAYERS) {
+                    score -= 8655;
+                } else if (fields[i][j].getStatus() == Status.COMPUTERS) {
+                    score++;
+                }
+            }
+        }
+        return score;
+    }
+
+    public int getComputersScore() {
+        int score = 0;
+        for (int i = 1; i < nn; i += 2) {
+            for (int j = 1; j < nn; j += 2) {
+                if (fields[i][j].getStatus() == Status.COMPUTERS) {
+                    score++;
+                }
+            }
+        }
+        return score;
+    }
+
+    public int getPlayersScore() {
+        int score = 0;
+        for (int i = 1; i < nn; i += 2) {
+            for (int j = 1; j < nn; j += 2) {
+                if (fields[i][j].getStatus() == Status.PLAYERS) {
                     score++;
                 }
             }
@@ -130,7 +224,9 @@ public class GameNode {
         for (int i = 0; i < nn; i++) {
             for (int j = 0; j < nn; j++) {
                 builder.append(fields[i][j].toString());
+                builder.append(" ");
             }
+            builder.append("\n");
         }
 
         return builder.toString();
@@ -152,4 +248,15 @@ public class GameNode {
         return fields;
     }
 
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public void addToScore(int score) {
+        this.score += score;
+    }
 }

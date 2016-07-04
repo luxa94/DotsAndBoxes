@@ -12,7 +12,7 @@ import org.androidannotations.annotations.ViewById;
 @EActivity(R.layout.activity_main)
 public class MainActivity extends AppCompatActivity {
 
-    private static final Integer[] ints = {2, 3, 4};
+    private static final Integer[] ints = {2, 3};
 
     @ViewById
     Spinner spinner;

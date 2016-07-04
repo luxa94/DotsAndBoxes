@@ -16,4 +16,13 @@
         android:layout_centerInParent="true"
         android:orientation="horizontal" />
 
+    <Button
+        android:id="@+id/restart"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="match_parent"
+        android:enabled="false"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:text="@string/restart_game" />
+
 </RelativeLayout>

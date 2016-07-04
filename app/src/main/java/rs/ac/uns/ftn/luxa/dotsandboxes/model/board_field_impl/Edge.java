@@ -14,4 +14,14 @@ public class Edge extends BoardField {
         super(i, j);
     }
 
+    @Override
+    public void setStatus(Status status) {
+        super.setStatus(status);
+        for (BoardField field : adjacent) {
+            if (field.isCompleted()) {
+                field.setStatus(status);
+            }
+        }
+    }
+
 }

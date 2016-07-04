@@ -2,32 +2,37 @@ package rs.ac.uns.ftn.luxa.dotsandboxes;
 
 import android.animation.ObjectAnimator;
 import android.graphics.Color;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import org.androidannotations.annotations.AfterExtras;
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.Bean;
+import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.Extra;
+import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
 
+import java.util.Collections;
 import java.util.List;
 
 import rs.ac.uns.ftn.luxa.dotsandboxes.enums.Player;
 import rs.ac.uns.ftn.luxa.dotsandboxes.enums.Status;
 import rs.ac.uns.ftn.luxa.dotsandboxes.model.GameNode;
+import rs.ac.uns.ftn.luxa.dotsandboxes.util.IntIntTuple;
 import rs.ac.uns.ftn.luxa.dotsandboxes.util.Stack;
 
 @EActivity(R.layout.activity_game)
 public class GameActivity extends AppCompatActivity {
 
-    private boolean doubleBackToExitPressedOnce = false;
+    private static int MAX_DEPTH = 3;
 
     private static final int LINE_THICKNESS = 45;
 
@@ -48,8 +53,19 @@ public class GameActivity extends AppCompatActivity {
     @ViewById
     LinearLayout centerLayout;
 
+    @ViewById
+    Button restart;
+
+    @AfterExtras
+    void setMaxDepth() {
+        MAX_DEPTH = 5 - n;
+    }
+
+    @Click({R.id.restart})
     @AfterViews
     void afterViews() {
+        restart.setEnabled(false);
+        centerLayout.removeAllViews();
         currentPlayer = Player.PLAYER;
         node = new GameNode(n);
         node.setPlayer(Player.PLAYER);
@@ -116,6 +132,7 @@ public class GameActivity extends AppCompatActivity {
                     } else {
                         viewParams.width = LinearLayout.LayoutParams.MATCH_PARENT;
                         viewParams.weight = 1;
+                        newView.setAlpha(.5f);
                     }
                     newView.setLayoutParams(viewParams);
                     newLayout.addView(newView);
@@ -139,58 +156,186 @@ public class GameActivity extends AppCompatActivity {
 
         final GameNode newNode = new GameNode(node);
         newNode.setPlayer(Player.PLAYER);
-        newNode.getFields()[i][j].setStatus(Status.PLAYERS);
-        if (node.score() == newNode.score()) {
-            currentPlayer = Player.COMPUTER;
-            node = newNode;
-            stack.clear();
-            stack.push(node);
-            computerTurn();
-        } else {
-            Toast.makeText(this, "Good job! Play once more.", Toast.LENGTH_SHORT).show();
+        newNode.getFields()[j][i].setStatus(Status.PLAYERS);
+        final GameNode oldNode = node;
+        node = newNode;
+
+        for (IntIntTuple t : node.findDifferentFields(oldNode)) {
+            activate(t.getSecond(), t.getFirst(), Player.PLAYER);
         }
+
+        Log.e("NODE", node.toString());
+        if (!checkForEnd()) {
+            if (oldNode.completedFields() == newNode.completedFields()) {
+                currentPlayer = Player.COMPUTER;
+                computerTurn();
+            } else {
+                Toast.makeText(this, "Good job! Play once more.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private boolean checkForEnd() {
+        Log.e("SCORE", node.completedFields() + " " + GameNode.maxScore);
+        final boolean finished = node.completedFields() == GameNode.maxScore;
+
+        if (finished) {
+            enableRestart();
+            if (node.getScoreDifference() > 0) {
+                lost();
+            } else if (node.getScoreDifference() == 0) {
+                draw();
+            } else {
+                won();
+            }
+        }
+        return finished;
+    }
+
+    @UiThread
+    void enableRestart() {
+        restart.setEnabled(true);
     }
 
     @Background
     void computerTurn() {
-        while (!stack.isEmpty()) {
-            final GameNode nextNode = stack.pop();
-            final List<GameNode> nodes = nextNode.getNextNodes();
-            
-        }
-    }
+        final List<GameNode> nodes = node.getNextNodes(Status.COMPUTERS);
 
-    private Player other(Player player) {
-        return player == Player.COMPUTER ? Player.PLAYER : Player.COMPUTER;
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (doubleBackToExitPressedOnce) {
-            super.onBackPressed();
-            return;
-        }
-
-        this.doubleBackToExitPressedOnce = true;
-        Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
-
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                doubleBackToExitPressedOnce = false;
+        final StringBuilder builder = new StringBuilder();
+        if (nodes.size() > 0) {
+            for (GameNode gameNode : nodes) {
+                calculateScore(gameNode, Status.COMPUTERS, MAX_DEPTH);
+                builder.append(gameNode.getScore());
+                builder.append(" ");
             }
-        }, 2000);
+        }
+
+
+        Log.e("BUILDER", builder.toString());
+
+        final GameNode newNode = findMaxNewNode(nodes);
+        Log.e("FFFFFF", newNode.getScore() + "");
+        final GameNode oldNode = node;
+        node = newNode;
+        setActive(oldNode);
+
+        Log.e("NODE", node.toString());
+
+        if (!checkForEnd()) {
+//            if (oldNode.completedFields() != newNode.completedFields()) {
+//                computerTurn();
+//            } else {
+                yourTurn();
+                currentPlayer = Player.PLAYER;
+//            }
+        }
+    }
+
+    @UiThread
+    void lost() {
+        Toast.makeText(this, "Your LOST.", Toast.LENGTH_SHORT).show();
+    }
+
+    @UiThread
+    void won() {
+        Toast.makeText(this, "Your WON! Congratulations!", Toast.LENGTH_SHORT).show();
+    }
+
+    @UiThread
+    void draw() {
+        Toast.makeText(this, "It's a draw!", Toast.LENGTH_SHORT).show();
+    }
+
+    @UiThread
+    void yourTurn() {
+        Toast.makeText(this, "Your turn.", Toast.LENGTH_SHORT).show();
+    }
+
+    @UiThread(delay = 200)
+    void setActive(GameNode newNode) {
+        final List<IntIntTuple> free = node.findDifferentEdges(newNode);
+        for (IntIntTuple t : free) {
+            activate(t.getSecond(), t.getFirst(), Player.COMPUTER);
+        }
+
+        for (IntIntTuple t : node.findDifferentFields(newNode)) {
+            activate(t.getSecond(), t.getFirst(), Player.COMPUTER);
+        }
+    }
+
+    void calculateScore(GameNode node, Status player, int depth) {
+        final List<GameNode> nodes = node.getNextNodes(player);
+        if (depth > 0 && nodes.size() > 0) {
+            for (GameNode gameNode : nodes) {
+                if (gameNode.completedFields() > node.completedFields()) {
+                    calculateScore(gameNode, player, depth - 1);
+                } else {
+                    calculateScore(gameNode, other(player), depth - 1);
+                }
+            }
+            if (player == Status.COMPUTERS) {
+                node.setScore(findMax(nodes).getScore());
+            } else {
+                node.setScore(findMin(nodes).getScore());
+            }
+        } else {
+            node.setScore(node.getScoreAdjusted());
+        }
+    }
+
+    private Status other(Status status) {
+        return status == Status.PLAYERS ? Status.COMPUTERS : Status.PLAYERS;
+    }
+
+    private GameNode findMax(List<GameNode> nodes) {
+        GameNode n = null;
+        Collections.shuffle(nodes);
+        if (nodes.size() > 0) {
+            n = nodes.get(0);
+            for (GameNode gameNode : nodes) {
+                if (n.getScore() <= gameNode.getScore()) {
+                    n = gameNode;
+                }
+            }
+        }
+        return n;
+    }
+
+    private GameNode findMaxNewNode(List<GameNode> nodes) {
+        GameNode n = null;
+        Collections.shuffle(nodes);
+        if (nodes.size() > 0) {
+            n = nodes.get(0);
+            for (GameNode gameNode : nodes) {
+                if (n.getScoreDifference() <= gameNode.getScoreDifference()) {
+                    n = gameNode;
+                }
+            }
+        }
+        return n;
+    }
+
+    private GameNode findMin(List<GameNode> nodes) {
+        GameNode n = null;
+        Collections.shuffle(nodes);
+        if (nodes.size() > 0) {
+            n = nodes.get(0);
+            for (GameNode gameNode : nodes) {
+                if (n.getScore() > gameNode.getScore()) {
+                    n = gameNode;
+                }
+            }
+        }
+
+        return n;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // TODO Auto-generated method stub
-
-        if(event.getPointerCount() > 1) {
+        if (event.getPointerCount() > 1) {
             System.out.println("Multitouch detected!");
             return true;
-        }
-        else
-            return  super.onTouchEvent(event);
+        } else
+            return super.onTouchEvent(event);
     }
 }
