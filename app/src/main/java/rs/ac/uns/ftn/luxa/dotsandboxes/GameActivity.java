@@ -210,24 +210,14 @@ public class GameActivity extends AppCompatActivity {
             }
         }
 
-
-        Log.e("BUILDER", builder.toString());
-
         final GameNode newNode = findMaxNewNode(nodes);
-        Log.e("FFFFFF", newNode.getScore() + "");
         final GameNode oldNode = node;
         node = newNode;
         setActive(oldNode);
 
-        Log.e("NODE", node.toString());
-
         if (!checkForEnd()) {
-//            if (oldNode.completedFields() != newNode.completedFields()) {
-//                computerTurn();
-//            } else {
-                yourTurn();
-                currentPlayer = Player.PLAYER;
-//            }
+            yourTurn();
+            currentPlayer = Player.PLAYER;
         }
     }
 
