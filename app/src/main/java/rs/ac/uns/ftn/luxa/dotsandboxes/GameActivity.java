@@ -201,12 +201,9 @@ public class GameActivity extends AppCompatActivity {
     void computerTurn() {
         final List<GameNode> nodes = node.getNextNodes(Status.COMPUTERS);
 
-        final StringBuilder builder = new StringBuilder();
         if (nodes.size() > 0) {
             for (GameNode gameNode : nodes) {
                 calculateScore(gameNode, Status.COMPUTERS, MAX_DEPTH);
-                builder.append(gameNode.getScore());
-                builder.append(" ");
             }
         }
 
