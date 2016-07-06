@@ -224,7 +224,7 @@ public class GameActivity extends AppCompatActivity {
 
     @UiThread
     void lost() {
-        Toast.makeText(this, "Your LOST.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "You LOST.", Toast.LENGTH_SHORT).show();
     }
 
     @UiThread
